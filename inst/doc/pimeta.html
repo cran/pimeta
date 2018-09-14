@@ -12,9 +12,9 @@
 
 <meta name="author" content="Kengo Nagashima" />
 
-<meta name="date" content="2018-09-14" />
+<meta name="date" content="2018-09-15" />
 
-<title>Introduction the pimeta package</title>
+<title>Introduction to the pimeta package</title>
 
 
 
@@ -68,9 +68,9 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 
 
-<h1 class="title toc-ignore">Introduction the <code>pimeta</code> package</h1>
+<h1 class="title toc-ignore">Introduction to the <code>pimeta</code> package</h1>
 <h4 class="author"><em>Kengo Nagashima</em></h4>
-<h4 class="date"><em>2018-09-14</em></h4>
+<h4 class="date"><em>2018-09-15</em></h4>
 
 
 
@@ -84,11 +84,18 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
      <span class="dt">se =</span> sbp<span class="op">$</span>sigmak, <span class="co"># within studies standard errors</span>
      <span class="dt">B  =</span> <span class="dv">50000</span>       <span class="co"># some options (e.g., number of bootstrap samples)</span>
 )</code></pre></div>
-<pre><code>Prediction Interval for Random-Effects Meta-Analysis
+<pre><code>&gt; # a parametric bootstrap prediction interval
+&gt; set.seed(20161102)
+&gt; pima(y  = sbp$y,      # effect size estimates
++      se = sbp$sigmak, # within studies standard errors
++      B  = 50000       # some options (e.g., number of bootstrap samples)
++ )
+
+Prediction Interval for Random-Effects Meta-Analysis
 
 A parametric bootstrap prediction interval
  Heterogeneity variance: DerSimonian-Laird
- SE for average treatment effect: standard
+ SE for average treatment effect: Hartung
 
 Average treatment effect [95%PI]:
  -0.3341 [-0.8769, 0.2248]
@@ -98,7 +105,7 @@ Average treatment effect [95%CI]:
 
 Heterogeneity variance (tau^2):
  0.0282</code></pre>
-<p>Several type of methods is supported.</p>
+<p>Several type of methods are supported.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Higgins-Thompson-Spiegelhalter prediction interval</span>
 <span class="kw">pima</span>(sbp<span class="op">$</span>y, sbp<span class="op">$</span>sigmak, <span class="dt">method =</span> <span class="st">&quot;HTS&quot;</span>)
 
@@ -107,6 +114,61 @@ Heterogeneity variance (tau^2):
 
 <span class="co"># Partlett-Riley prediction interval (Sidik and Jonkman's SE)</span>
 <span class="kw">pima</span>(sbp<span class="op">$</span>y, sbp<span class="op">$</span>sigmak, <span class="dt">method =</span> <span class="st">&quot;SJ&quot;</span>)</code></pre></div>
+<pre><code>&gt; # Higgins-Thompson-Spiegelhalter prediction interval
+&gt; pima(sbp$y, sbp$sigmak, method = &quot;HTS&quot;)
+
+Prediction Interval for Random-Effects Meta-Analysis
+
+Higgins-Thompson-Spiegelhalter prediction interval
+ Heterogeneity variance: DerSimonian-Laird
+ SE for average treatment effect: standard
+
+Average treatment effect [95%PI]:
+ -0.3341 [-0.7598, 0.0917]
+
+Average treatment effect [95%CI]:
+ -0.3341 [-0.5068, -0.1613]
+
+Heterogeneity variance (tau^2):
+ 0.0282
+
+&gt; 
+&gt; # Partlett-Riley prediction interval (Hartung and Knapp's SE)
+&gt; pima(sbp$y, sbp$sigmak, method = &quot;HK&quot;)
+
+Prediction Interval for Random-Effects Meta-Analysis
+
+Partlett-Riley prediction interval
+ Heterogeneity variance: REML
+ SE for average treatment effect: Hartung-Knapp
+
+Average treatment effect [95%PI]:
+ -0.3287 [-0.9887, 0.3312]
+
+Average treatment effect [95%CI]:
+ -0.3287 [-0.5761, -0.0814]
+
+Heterogeneity variance (tau^2):
+ 0.0700
+
+&gt; 
+&gt; # Partlett-Riley prediction interval (Sidik and Jonkman's SE)
+&gt; pima(sbp$y, sbp$sigmak, method = &quot;SJ&quot;)
+
+Prediction Interval for Random-Effects Meta-Analysis
+
+Partlett-Riley prediction interval
+ Heterogeneity variance: REML
+ SE for average treatment effect: Sidik-Jonkman
+
+Average treatment effect [95%PI]:
+ -0.3287 [-0.9835, 0.3261]
+
+Average treatment effect [95%CI]:
+ -0.3287 [-0.5625, -0.0950]
+
+Heterogeneity variance (tau^2):
+ 0.0700</code></pre>
 
 
 

@@ -1,7 +1,7 @@
 Package: pimeta
 Type: Package
 Title: Prediction Intervals for Random-Effects Meta-Analysis
-Version: 1.1.0
+Version: 1.1.1
 Authors@R: c(
   person("Kengo", "Nagashima", email = "nshi1201@gmail.com",
          role = c("aut", "cre"), comment = c(ORCID = "0000-0003-4529-9045")),
@@ -20,10 +20,10 @@ Encoding: UTF-8
 VignetteBuilder: knitr
 RoxygenNote: 6.1.0
 NeedsCompilation: yes
-Packaged: 2018-09-14 08:53:52 UTC; NAGASHIMA
+Packaged: 2018-09-14 17:57:02 UTC; NAGASHIMA
 Author: Kengo Nagashima [aut, cre] (<https://orcid.org/0000-0003-4529-9045>),
   Hisashi Noma [aut],
   Toshi A. Furukawa [aut]
 Maintainer: Kengo Nagashima <nshi1201@gmail.com>
 Repository: CRAN
-Date/Publication: 2018-09-14 09:10:03 UTC
+Date/Publication: 2018-09-14 23:10:02 UTC
