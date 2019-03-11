@@ -1,18 +1,4 @@
----
-title: "Introduction to the `pimeta` package"
-author: "Kengo Nagashima"
-date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteIndexEntry{Introduction to the `pimeta` package}
-  %\VignetteEncoding{UTF-8}
----
-
-The `pimeta` package is easy.
-Load your data and then pass it the `pima` function!
-
-```{r, echo = TRUE, fig.width = 5, fig.height = 3}
+## ---- echo = TRUE, fig.width = 5, fig.height = 3-------------------------
 require("pimeta")
 data(sbp, package = "pimeta")
 
@@ -26,10 +12,8 @@ out <- pima(
 )
 out
 plot(out, base_size = 10, studylabel = sbp$label)
-```
 
-Several type of methods are supported.
-```{r, echo = TRUE}
+## ---- echo = TRUE--------------------------------------------------------
 # Higgins-Thompson-Spiegelhalter prediction interval
 pima(sbp$y, sbp$sigmak, method = "HTS")
 
@@ -41,11 +25,8 @@ pima(sbp$y, sbp$sigmak, method = "SJ")
 
 # Partlett-Riley prediction interval (Kenward and Roger's variance)
 pima(sbp$y, sbp$sigmak, method = "KR")
-```
 
-The `convert_bin()` function converts binary outcome data to effect size estimates and within studies standard errors vectors.
-A data set of 13 placebo-controlled trials with cisapride that was reported by Hartung and Knapp (Stat Med., 2001, [doi:10.1002/sim.1009](https://doi.org/10.1002/sim.1009)) was analyzed below.
-```{r, echo = TRUE, fig.width = 5, fig.height = 3}
+## ---- echo = TRUE, fig.width = 5, fig.height = 3-------------------------
 m1 <- c(15,12,29,42,14,44,14,29,10,17,38,19,21)
 n1 <- c(16,16,34,56,22,54,17,58,14,26,44,29,38)
 m2 <- c( 9, 1,18,31, 6,17, 7,23, 3, 6,12,22,19)
@@ -60,4 +41,4 @@ binlabel <- c(
    "Chung", "Van Outryve et al.", "Al-Quorain et al.", "Kellow et al.",
    "Yeoh et al.")
 plot(pibin, digits = 2, base_size = 10, studylabel = binlabel)
-```
+

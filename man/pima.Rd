@@ -2,17 +2,26 @@
 % Please edit documentation in R/pima-.r
 \name{pima}
 \alias{pima}
+\alias{pima_boot}
+\alias{bootPI}
+\alias{pima_hts}
+\alias{htsdl}
+\alias{pima_htsreml}
+\alias{htsreml}
 \title{Calculating Prediction Intervals}
 \usage{
-pima(y, se, alpha = 0.05, method = c("boot", "HTS", "HK", "SJ", "CL"),
-  B = 25000, maxit1 = 1e+05, eps = 10^(-10), lower = 0,
-  upper = 1000, maxit2 = 1000, tol = .Machine$double.eps^0.25,
-  rnd = NULL, maxiter = 100)
+pima(y, se, v = NULL, alpha = 0.05, method = c("boot", "HTS", "HK",
+  "SJ", "KR", "CL", "APX"), B = 25000, parallel = FALSE, seed = NULL,
+  maxit1 = 1e+05, eps = 10^(-10), lower = 0, upper = 1000,
+  maxit2 = 1000, tol = .Machine$double.eps^0.25, rnd = NULL,
+  maxiter = 100)
 }
 \arguments{
 \item{y}{the effect size estimates vector}
 
-\item{se}{the within studies standard errors vector}
+\item{se}{the within studies standard error estimates vector}
+
+\item{v}{the within studies variance estimates vector}
 
 \item{alpha}{the alpha level of the prediction interval}
 
@@ -21,22 +30,33 @@ pima(y, se, alpha = 0.05, method = c("boot", "HTS", "HK", "SJ", "CL"),
 \item \code{boot}: A parametric bootstrap prediction interval
            (Nagashima et al., 2018).
 \item \code{HTS}: the Higgins--Thompson--Spiegelhalter (2009) prediction interval / 
-           the DerSimonian & Laird estimator for \eqn{\tau^2} with
-           a standard SE estimator for the average effect,
-           \eqn{(1/\sum{\hat{w}_i})^{-1}}.
-\item \code{HK}: Partlett--Riley (2017) prediction interval /
-           the REML estimator for \eqn{\tau^2} with
-           the Hartung and Knapp (2001)'s SE estimator for the average effect.
+           (the DerSimonian & Laird estimator for \eqn{\tau^2} with
+           an approximate variance estimator for the average effect,
+           \eqn{(1/\sum{\hat{w}_i})^{-1}}, \eqn{df=K-2}).
+\item \code{HK}: Partlett--Riley (2017) prediction interval
+           (the REML estimator for \eqn{\tau^2} with
+           the Hartung (1999)'s variance estimator [the Hartung and
+           Knapp (2001)'s estimator] for the average effect,
+           \eqn{df=K-2}).
 \item \code{SJ}: Partlett--Riley (2017) prediction interval /
-           the REML estimator for \eqn{\tau^2} with
-           the Sidik and Jonkman (2006)'s bias coreccted SE estimator
-           for the average effect.
-\item \code{CL}: a prediction interval with REML and standard SE /
-           the REML estimator for \eqn{\tau^2} with
-           a standard SE estimator for the average effect.
+           (the REML estimator for \eqn{\tau^2} with
+           the Sidik and Jonkman (2006)'s bias coreccted variance
+           estimator for the average effect, \eqn{df=K-2}).
+\item \code{KR}: Partlett--Riley (2017) prediction interval /
+           (the REML estimator for \eqn{\tau^2} with
+           the Kenward and Roger (1997)'s approach
+           for the average effect, \eqn{df=\nu-1}).
+\item \code{APX}: Partlett--Riley (2017) prediction interval /
+           (the REML estimator for \eqn{\tau^2} with
+           an approximate variance estimator for the average
+           effect, \eqn{df=K-2}).
 }}
 
 \item{B}{the number of bootstrap samples}
+
+\item{parallel}{the number of threads used in parallel computing, or FALSE that means single threading}
+
+\item{seed}{set the value of random seed}
 
 \item{maxit1}{the maximum number of iteration for the exact distribution function of \eqn{Q}}
 
@@ -44,7 +64,7 @@ pima(y, se, alpha = 0.05, method = c("boot", "HTS", "HK", "SJ", "CL"),
 
 \item{lower}{the lower limit of random numbers of \eqn{\tau^2}}
 
-\item{upper}{the lower upper of random numbers of \eqn{\tau^2}}
+\item{upper}{the upper limit of random numbers of \eqn{\tau^2}}
 
 \item{maxit2}{the maximum number of iteration for numerical inversions}
 
@@ -56,98 +76,60 @@ pima(y, se, alpha = 0.05, method = c("boot", "HTS", "HK", "SJ", "CL"),
 }
 \value{
 \itemize{
+\item \code{K}: the number of studies.
 \item \code{muhat}: the average treatment effect estimate \eqn{\hat{\mu}}.
-\item \code{lci}, \code{lci}: the lower and upper confidence limits \eqn{\hat{\mu}_l} and \eqn{\hat{\mu}_u}.
-\item \code{lpi}, \code{lpi}: the lower and upper prediction limits \eqn{\hat{c}_l} and \eqn{\hat{c}_u}.
+\item \code{lci}, \code{uci}: the lower and upper confidence limits \eqn{\hat{\mu}_l} and \eqn{\hat{\mu}_u}.
+\item \code{lpi}, \code{upi}: the lower and upper prediction limits \eqn{\hat{c}_l} and \eqn{\hat{c}_u}.
 \item \code{tau2h}: the estimate for \eqn{\tau^2}.
+\item \code{i2h}: the estimate for \eqn{I^2}.
+\item \code{nup}: degrees of freedom for the prediction interval.
+\item \code{nuc}: degrees of freedom for the confidence interval.
+\item \code{vmuhat}: the variance estimate for \eqn{\hat{\mu}}.
 }
 }
 \description{
-This function calculates prediction intervals using \code{pima_boot},
-\code{pima_hts}, or \code{pima_htsreml} functions.
+This function can estimate prediction intervals (PIs) as follows: 
+A parametric bootstrap PI based on confidence distribution
+(Nagashima et al., 2018). A parametric bootstrap confidence
+interval is also calculated based on the same sampling method
+for bootstrap PI.
+The Higgins--Thompson--Spiegelhalter (2009) prediction interval.
+The Partlett--Riley (2017) prediction intervals.
+}
+\details{
+The functions \code{bootPI}, \code{pima_boot},
+\code{pima_hts}, \code{htsdl}, \code{pima_htsreml}, \code{htsreml}
+are deprecated, and integrated to the \code{pima} function.
 }
 \examples{
 data(sbp, package = "pimeta")
-set.seed(20161102)
-\donttest{pimeta::pima(sbp$y, sbp$sigmak, B = 50000)}
-# 
-# Prediction Interval for Random-Effects Meta-Analysis
-# 
-# A parametric bootstrap prediction interval
-#  Heterogeneity variance: DerSimonian-Laird
-#  SE for average treatment effect: Hartung
-# 
-# Average treatment effect [95\%PI]:
-#  -0.3341 [-0.8769, 0.2248]
-# 
-# Average treatment effect [95\%CI]:
-#  -0.3341 [-0.5660, -0.0976]
-# 
-# Heterogeneity variance (tau^2):
-#  0.0282
- 
-\donttest{pimeta::pima(sbp$y, sbp$sigmak, method = "HTS")}
-# 
-# Prediction Interval for Random-Effects Meta-Analysis
-# 
-# Higgins-Thompson-Spiegelhalter prediction interval
-#  Heterogeneity variance: DerSimonian-Laird
-#  SE for average treatment effect: standard
-# 
-# Average treatment effect [95\%PI]:
-#  -0.3341 [-0.7598, 0.0917]
-# 
-# Average treatment effect [95\%CI]:
-#  -0.3341 [-0.5068, -0.1613]
-# 
-# Heterogeneity variance (tau^2):
-#  0.0282
 
-\donttest{pimeta::pima(sbp$y, sbp$sigmak, method = "HK")}
-# 
-# Prediction Interval for Random-Effects Meta-Analysis
-# 
-# Partlett-Riley prediction interval
-#  Heterogeneity variance: REML
-#  SE for average treatment effect: Hartung-Knapp
-# 
-# Average treatment effect [95\%PI]:
-#  -0.3287 [-0.9887, 0.3312]
-# 
-# Average treatment effect [95\%CI]:
-#  -0.3287 [-0.5761, -0.0814]
-# 
-# Heterogeneity variance (tau^2):
-#  0.0700
+# Nagashima-Noma-Furukawa prediction interval
+# is sufficiently accurate when I^2 >= 10\% and K >= 3
+\donttest{pimeta::pima(sbp$y, sbp$sigmak, seed = 3141592, parallel = 4)}
 
-\donttest{pimeta::pima(sbp$y, sbp$sigmak, method = "SJ")}
-# 
-# Prediction Interval for Random-Effects Meta-Analysis
-# 
-# Partlett-Riley prediction interval
-#  Heterogeneity variance: REML
-#  SE for average treatment effect: Hartung-Knapp
-# 
-# Average treatment effect [95\%PI]:
-#  -0.3287 [-0.9835, 0.3261]
-# 
-# Average treatment effect [95\%CI]:
-#  -0.3287 [-0.5625, -0.0950]
-# 
-# Heterogeneity variance (tau^2):
-#  0.0700
+# Higgins-Thompson-Spiegelhalter prediction interval and
+# Partlett-Riley prediction intervals
+# are accurate when I^2 > 30\% and K > 25
+pimeta::pima(sbp$y, sbp$sigmak, method = "HTS")
+pimeta::pima(sbp$y, sbp$sigmak, method = "HK")
+pimeta::pima(sbp$y, sbp$sigmak, method = "SJ")
+pimeta::pima(sbp$y, sbp$sigmak, method = "KR")
+pimeta::pima(sbp$y, sbp$sigmak, method = "APX")
 }
 \references{
 Higgins, J. P. T, Thompson, S. G., Spiegelhalter, D. J. (2009).
 A re-evaluation of random-effects meta-analysis.
 \emph{J R Stat Soc Ser A Stat Soc.}
 \strong{172}(1): 137-159.
-
+\url{https://doi.org/10.1111/j.1467-985X.2008.00552.x}
+ 
 Partlett, C, and Riley, R. D. (2017).
 Random effects meta-analysis: Coverage performance of 95%
 confidence and prediction intervals following REML estimation.
 \emph{Stat Med.}
 \strong{36}(2): 301-317.
+\url{https://doi.org/10.1002/sim.7140}
 
 Nagashima, K., Noma, H., and Furukawa, T. A. (2018).
 Prediction intervals for random-effects meta-analysis:
@@ -155,9 +137,40 @@ a confidence distribution approach.
 \emph{Stat Methods Med Res}.
 \emph{In press}.
 \url{https://doi.org/10.1177/0962280218773520}.
+
+Hartung, J. (1999).
+An alternative method for meta-analysis.
+\emph{Biom J.}
+\strong{41}(8): 901-916.
+\url{https://doi.org/10.1002/(SICI)1521-4036(199912)41:8<901::AID-BIMJ901>3.0.CO;2-W}.
+
+Hartung, J., and Knapp, G. (2001).
+On tests of the overall treatment effect in meta-analysis with
+normally distributed responses.
+\emph{Stat Med.}
+\strong{20}(12): 1771-1782.
+\url{https://doi.org/10.1002/sim.791}.
+
+Sidik, K., and Jonkman, J. N. (2006).
+Robust variance estimation for random effects meta-analysis.
+\emph{Comput Stat Data Anal.}
+\strong{50}(12): 3681-3701.
+\url{https://doi.org/10.1016/j.csda.2005.07.019}.
+
+Kenward, M. G., and Roger, J. H. (1997).
+Small sample inference for fixed effects from restricted
+maximum likelihood.
+\emph{Biometrics.}
+\strong{53}(3): 983-997.
+\url{https://doi.org/10.2307/2533558}.
+
+DerSimonian, R., and Laird, N. (1986).
+Meta-analysis in clinical trials.
+\emph{Control Clin Trials.}
+\strong{7}(3): 177-188.
 }
 \seealso{
-\code{\link[=pima_boot]{pima_boot()}},
-\code{\link[=pima_hts]{pima_hts()}},
-\code{\link[=pima_htsreml]{pima_htsreml()}}.
+\code{\link[=print.pima]{print.pima}},
+\code{\link[=plot.pima]{plot.pima}},
+\code{\link[=cima]{cima}}.
 }

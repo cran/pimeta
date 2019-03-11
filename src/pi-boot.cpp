@@ -3,8 +3,29 @@
 #include "pimeta.h"
 // [[Rcpp::depends("RcppEigen")]]
 
+#ifdef _OPENMP
+#include <omp.h>
+// [[Rcpp::plugins("openmp")]]
+#endif
+
 using namespace Rcpp;
 
+// [[Rcpp::export]]
+List pwchisqCpp(const double q, const Eigen::VectorXd& lambda, const Eigen::VectorXi& mult,
+                const Eigen::VectorXd& delta, const int n, const double mode,
+                const int maxit, const double eps) {
+  
+  double prob;
+  int ifault;
+  
+  pQCpp2(q, lambda, mult, delta, n, mode, maxit, eps, &prob, &ifault);
+  
+  return List::create(
+    Named("prob") = prob,
+    Named("ifault") = ifault
+  );
+  
+}
 
 // [[Rcpp::export]]
 List bootPICppWrap(const Eigen::VectorXd& rnd, const Eigen::VectorXd& y,
@@ -88,44 +109,14 @@ void bootPICpp(const Eigen::VectorXd& rnd, const Eigen::VectorXd& y,
   
 }
 
-//void exactCItau2(const Eigen::VectorXd& y, const Eigen::VectorXd& sigma,
-//                  const double mode, const int maxit1, const double eps,
-//                  const double lower, const double upper, const int maxit2,
-//                  const double tol, const double alpha) {
-//   
-//   int i = 0, status;
-//   double tau2;
-//   
-//   Eigen::MatrixXd A = getA(sigma);
-//   int k = sigma.size();
-//   double qa = getqa(y, A);
-//   double mupper = std::max(upper, qa);
-//   double zeroval = fx(0.0, 0.0, 0, qa, sigma, A, k, mode, maxit1, eps);
-//   
-//   if (zeroval >= pvec(i)) {
-//     rnd(i) = 0.0;
-//   } else {
-//     findRootTau2(pvec(i), 0, qa, sigma, A, k, mode, maxit1, eps, lower, mupper, maxit2, tol, &tau2, &status);
-//     if (status != 2) {
-//       if (status == 1) {
-//         rnd(i) = R_PosInf;
-//       } else {
-//         rnd(i) = tau2;
-//       }
-//     } else {
-//       rnd = R_NaN;
-//     }
-//   }
-//   
-// }
-
 // [[Rcpp::export]]
 NumericVector rtau2CppWrap(const int n, const Eigen::VectorXd& y, const Eigen::VectorXd& sigma,
                            const double mode, const int maxit1, const double eps,
-                           const double lower, const double upper, const int maxit2, const double tol) {
+                           const double lower, const double upper, const int maxit2, const double tol,
+                           const int nthread) {
   
-  int i = 0, status;
-  double tau2;
+  int i, *status = new int[n];
+  double *tau2 = new double[n];
   NumericVector rnd(n), pvec(n);
   pvec = runif(n);
   
@@ -135,27 +126,43 @@ NumericVector rtau2CppWrap(const int n, const Eigen::VectorXd& y, const Eigen::V
   double mupper = std::max(upper, qa);
   double zeroval = fx(0.0, 0.0, 0, qa, sigma, A, k, mode, maxit1, eps);
   
-  while (i < n) {
-    if (zeroval >= pvec(i)) {
-      rnd(i) = 0.0;
-      i++;
-    } else {
-      findRootTau2(pvec(i), 0, qa, sigma, A, k, mode, maxit1, eps, lower, mupper, maxit2, tol, &tau2, &status);
-      if (status != 2) {
-        if (status == 1) {
-          rnd(i) = R_PosInf;
-        } else {
-          rnd(i) = tau2;
-        }
-        i++;
+#ifdef _OPENMP
+//  int maxnthread = omp_get_max_threads();
+//  Rprintf("maximum threads are %d\n", maxnthread);
+//  omp_set_num_threads(std::min(nthread, maxnthread));
+omp_set_num_threads(nthread);
+#endif
+#pragma omp parallel default(shared), private(i)
+{
+#pragma omp for nowait
+  for (i = 0; i < n; i++) {
+    while (1) {
+      if (zeroval >= pvec(i)) {
+        rnd(i) = 0.0;
+        break;
       } else {
-        pvec(i) = R::runif(0.0, 1.0);
+        findRootTau2(pvec(i), 0, qa, sigma, A, k, mode, maxit1, eps,
+                     lower, mupper, maxit2, tol, &tau2[i], &status[i]);
+        if (status[i] != 2) {
+          if (status[i] == 1) {
+            rnd(i) = R_PosInf;
+          } else {
+            rnd(i) = tau2[i];
+          }
+          break;
+        } else {
+          pvec(i) = R::runif(0.0, 1.0);
+        }
       }
     }
   }
-  
-  return rnd;
-  
+}
+
+delete [] status;
+delete [] tau2;
+
+return rnd;
+
 }
 
 double getqa(const Eigen::VectorXd& y, const Eigen::MatrixXd& A) {
@@ -325,8 +332,8 @@ double fx(const double tau2, const double alpha, const int side, const double qa
 }
 
 
-void pQCpp(const double qa, const Eigen::VectorXd& lambda, const int n, const double mode, const int maxit, const double eps,
-           double *prob, int *ifault) {
+void pQCpp(const double qa, const Eigen::VectorXd& lambda, const int n, const double mode,
+           const int maxit, const double eps, double *prob, int *ifault) {
   
   // Ruben (1962), Farebrother (1984, AS 204)
   // Optimized for cochran's Q in meta-analysis
@@ -420,6 +427,160 @@ void pQCpp(const double qa, const Eigen::VectorXd& lambda, const int n, const do
             hold = theta[i]*gamma[i];
             theta[i] = hold;
             sum1 = sum1 + hold;
+          }
+          
+          sum1 = 0.5*sum1;
+          b[m - 1] = sum1;
+          for (i = m - 1; i > 0; i--) {
+            sum1 = sum1 + b[i - 1]*a[m - i - 1];
+          }
+          sum1 = sum1/(double)m;
+          a[m - 1] = sum1;
+          
+          k = k + 2;
+          if (lans < tol) {
+            lans = lans + log(z/(double)k);
+            dans = exp(lans);
+          } else {
+            dans = dans*z/(double)k;
+          }
+          
+          pans = pans - dans;
+          sum = sum - sum1;
+          sum1 = pans*sum1;
+          *prob = *prob + sum1;
+          
+          if (*prob < (-aoinv)) {
+            *prob = -3.0;
+            *ifault = 3;
+            break;
+          }
+          if (fabs(pans*sum) < eps2) {
+            if (fabs(sum1) < eps2) {
+              *ifault = 0;
+              flg = 1;
+              break;
+            }
+          }
+        }
+        if (flg == 0) {
+          *ifault = 4;
+        }
+        *prob = ao*(*prob);
+        if (*prob < 0.0 || *prob > 1.0) {
+          *ifault = *ifault + 5;
+        } else if (dans < 0.0) {
+          *ifault = *ifault + 6;
+        }
+      }
+    }
+    
+    delete[] gamma;
+    delete[] theta;
+    delete[] a;
+    delete[] b;
+  }
+  
+}
+
+void pQCpp2(const double qa, const Eigen::VectorXd& lambda, const Eigen::VectorXi& mult,
+            const Eigen::VectorXd& delta, const int n, const double mode, const int maxit,
+            const double eps, double *prob, int *ifault) {
+  
+  // Ruben (1962), Farebrother (1984, AS 204)
+  
+  if (n < 1 || qa < 0.0 || maxit < 1 || eps < 0.0) {
+    *prob = -2.0;
+    *ifault = 2;
+  } else {
+    int i, k, m, flg = 0;
+    double ao, aoinv, z, beta, eps2, sum, sum1, hold, hold2, dans,
+    lans, pans, tol = -200.0;
+    double *gamma, *theta, *a, *b;
+    gamma = new double[n];
+    theta = new double[n];
+    a = new double[maxit];
+    b = new double[maxit];
+    
+    sum = lambda[0];
+    beta = sum;
+    
+    for (i = 0; i < n; i++) {
+      hold = lambda[i];
+      if (hold <= 0.0 || mult[i] < 1 || delta[i] < 0.0) {
+        *prob = -7.0;
+        *ifault = -i;
+        flg = 1;
+        break;
+      }
+      if (beta > hold) {
+        beta = hold;
+      }
+      if (sum < hold) {
+        sum = hold;
+      }
+    }
+    
+    if (flg == 0) {
+      
+      if (mode > 0.0) {
+        beta = mode*beta;
+      } else {
+        beta = 2.0/(1.0/beta + 1.0/sum);
+      }
+      
+      k = 0;
+      sum = 1.0;
+      sum1 = 0.0;
+      for (i = 0; i < n; i++) {
+        hold = beta/lambda[i];
+        gamma[i] = 1.0 - hold;
+        sum = sum*pow(hold, mult[i]);
+        sum1 = sum1 + delta[i];
+        k = k + mult[i];
+        theta[i] = 1.0;
+      }
+      
+      ao = exp(0.5*(log(sum) - sum1));
+      if (ao <= 0.0) {
+        *prob = 0.0;
+        *ifault = 1;
+      } else {
+        z = qa/beta;
+        if ((k%2) == 0) {
+          i = 2;
+          lans = -0.5*z;
+          dans = exp(lans);
+          pans = 1.0 - dans;
+        } else {
+          i = 1;
+          lans = -0.5*(z + log(z)) - 0.22579135264473;
+          dans = exp(lans);
+          pans = R::pnorm(sqrt(z), 0.0, 1.0, 1, 0) - R::pnorm(-sqrt(z), 0.0, 1.0, 1, 0);
+        }
+        k = k - 2;
+        for (int j = i; j <= k; j = j + 2) {
+          if (lans < tol) {
+            lans = lans + log(z/(double)j);
+            dans = exp(lans);
+          } else {
+            dans = dans*z/(double)j;
+          }
+          pans = pans - dans;
+        }
+        *prob = pans;
+        eps2 = eps / ao;
+        aoinv = 1.0 / ao;
+        sum = aoinv - 1.0;
+        
+        for (m = 1; m < maxit + 1; m++) {
+          sum1 = 0.0;
+          
+          for (i = 0; i < n; i++) {
+            hold = theta[i];
+            hold2 = hold*gamma[i];
+            theta[i] = hold2;
+            sum1 = sum1 + hold2*((double)mult[i]) + ((double)m)*delta[i]*(hold - hold2);
           }
           
           sum1 = 0.5*sum1;

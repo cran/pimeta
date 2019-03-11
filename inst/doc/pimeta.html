@@ -12,14 +12,14 @@
 
 <meta name="author" content="Kengo Nagashima" />
 
-<meta name="date" content="2018-09-15" />
+<meta name="date" content="2019-03-11" />
 
 <title>Introduction to the pimeta package</title>
 
 
 
 <style type="text/css">code{white-space: pre;}</style>
-<style type="text/css">
+<style type="text/css" data-origin="pandoc">
 div.sourceCode { overflow-x: auto; }
 table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
   margin: 0; padding: 0; vertical-align: baseline; border: none; }
@@ -55,7 +55,29 @@ code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
 code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
 code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
 code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+
 </style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    for (var j = 0; j < rules.length; j++) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' || rule.style.backgroundColor === '') continue;
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
 
 
 
@@ -70,105 +92,185 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">Introduction to the <code>pimeta</code> package</h1>
 <h4 class="author"><em>Kengo Nagashima</em></h4>
-<h4 class="date"><em>2018-09-15</em></h4>
+<h4 class="date"><em>2019-03-11</em></h4>
 
 
 
 <p>The <code>pimeta</code> package is easy. Load your data and then pass it the <code>pima</code> function!</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">require</span>(<span class="st">&quot;pimeta&quot;</span>)
-<span class="kw">data</span>(sbp, <span class="dt">package =</span> <span class="st">&quot;pimeta&quot;</span>)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">require</span>(<span class="st">&quot;pimeta&quot;</span>)</code></pre></div>
+<pre><code>## Loading required package: pimeta</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">data</span>(sbp, <span class="dt">package =</span> <span class="st">&quot;pimeta&quot;</span>)
 
 <span class="co"># a parametric bootstrap prediction interval</span>
-<span class="kw">set.seed</span>(<span class="dv">20161102</span>)
-<span class="kw">pima</span>(<span class="dt">y  =</span> sbp<span class="op">$</span>y,      <span class="co"># effect size estimates</span>
-     <span class="dt">se =</span> sbp<span class="op">$</span>sigmak, <span class="co"># within studies standard errors</span>
-     <span class="dt">B  =</span> <span class="dv">50000</span>       <span class="co"># some options (e.g., number of bootstrap samples)</span>
-)</code></pre></div>
-<pre><code>&gt; # a parametric bootstrap prediction interval
-&gt; set.seed(20161102)
-&gt; pima(y  = sbp$y,      # effect size estimates
-+      se = sbp$sigmak, # within studies standard errors
-+      B  = 50000       # some options (e.g., number of bootstrap samples)
-+ )
-
-Prediction Interval for Random-Effects Meta-Analysis
-
-A parametric bootstrap prediction interval
- Heterogeneity variance: DerSimonian-Laird
- SE for average treatment effect: Hartung
-
-Average treatment effect [95%PI]:
- -0.3341 [-0.8769, 0.2248]
-
-Average treatment effect [95%CI]:
- -0.3341 [-0.5660, -0.0976]
-
-Heterogeneity variance (tau^2):
- 0.0282</code></pre>
+out &lt;-<span class="st"> </span><span class="kw">pima</span>(
+  <span class="dt">y        =</span> sbp<span class="op">$</span>y,      <span class="co"># effect size estimates</span>
+  <span class="dt">se       =</span> sbp<span class="op">$</span>sigmak, <span class="co"># within studies standard errors</span>
+  <span class="dt">B        =</span> <span class="dv">25000</span>,      <span class="co"># number of bootstrap samples</span>
+  <span class="dt">seed     =</span> <span class="dv">14142135</span>,   <span class="co"># random number seed</span>
+  <span class="dt">parallel =</span> <span class="dv">4</span>           <span class="co"># multi-threading     </span>
+)
+out</code></pre></div>
+<pre><code>## 
+## Prediction &amp; Confidence Intervals for Random-Effects Meta-Analysis
+## 
+## A parametric bootstrap prediction and confidence intervals
+##  Heterogeneity variance: DerSimonian-Laird
+##  Variance for average treatment effect: Hartung (Hartung-Knapp)
+## 
+## No. of studies: 10
+## 
+## Average treatment effect [95% prediction interval]:
+##  -0.3341 [-0.8807, 0.2240]
+##  d.f.: 9
+## 
+## Average treatment effect [95% confidence interval]:
+##  -0.3341 [-0.5613, -0.0985]
+##  d.f.: 9
+## 
+## Heterogeneity measure
+##  tau-squared: 0.0282
+##  I-squared:  70.5%</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">plot</span>(out, <span class="dt">base_size =</span> <span class="dv">10</span>, <span class="dt">studylabel =</span> sbp<span class="op">$</span>label)</code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
 <p>Several type of methods are supported.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Higgins-Thompson-Spiegelhalter prediction interval</span>
-<span class="kw">pima</span>(sbp<span class="op">$</span>y, sbp<span class="op">$</span>sigmak, <span class="dt">method =</span> <span class="st">&quot;HTS&quot;</span>)
-
-<span class="co"># Partlett-Riley prediction interval (Hartung and Knapp's SE)</span>
-<span class="kw">pima</span>(sbp<span class="op">$</span>y, sbp<span class="op">$</span>sigmak, <span class="dt">method =</span> <span class="st">&quot;HK&quot;</span>)
-
-<span class="co"># Partlett-Riley prediction interval (Sidik and Jonkman's SE)</span>
+<span class="kw">pima</span>(sbp<span class="op">$</span>y, sbp<span class="op">$</span>sigmak, <span class="dt">method =</span> <span class="st">&quot;HTS&quot;</span>)</code></pre></div>
+<pre><code>## 
+## Prediction &amp; Confidence Intervals for Random-Effects Meta-Analysis
+## 
+## Higgins-Thompson-Spiegelhalter prediction and confidence intervals
+##  Heterogeneity variance: DerSimonian-Laird
+##  Variance for average treatment effect: approximate
+## 
+## No. of studies: 10
+## 
+## Average treatment effect [95% prediction interval]:
+##  -0.3341 [-0.7598, 0.0917]
+##  d.f.: 8
+## 
+## Average treatment effect [95% confidence interval]:
+##  -0.3341 [-0.5068, -0.1613]
+##  d.f.: 9
+## 
+## Heterogeneity measure
+##  tau-squared: 0.0282
+##  I-squared:  70.5%</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Partlett-Riley prediction interval (Hartung and Knapp's variance)</span>
+<span class="kw">pima</span>(sbp<span class="op">$</span>y, sbp<span class="op">$</span>sigmak, <span class="dt">method =</span> <span class="st">&quot;HK&quot;</span>)</code></pre></div>
+<pre><code>## 
+## Prediction &amp; Confidence Intervals for Random-Effects Meta-Analysis
+## 
+## Partlett-Riley prediction and confidence intervals
+##  Heterogeneity variance: REML
+##  Variance for average treatment effect: Hartung (Hartung-Knapp)
+## 
+## No. of studies: 10
+## 
+## Average treatment effect [95% prediction interval]:
+##  -0.3287 [-0.9887, 0.3312]
+##  d.f.: 8
+## 
+## Average treatment effect [95% confidence interval]:
+##  -0.3287 [-0.5761, -0.0814]
+##  d.f.: 9
+## 
+## Heterogeneity measure
+##  tau-squared: 0.0700
+##  I-squared:  85.5%</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Partlett-Riley prediction interval (Sidik and Jonkman's variance)</span>
 <span class="kw">pima</span>(sbp<span class="op">$</span>y, sbp<span class="op">$</span>sigmak, <span class="dt">method =</span> <span class="st">&quot;SJ&quot;</span>)</code></pre></div>
-<pre><code>&gt; # Higgins-Thompson-Spiegelhalter prediction interval
-&gt; pima(sbp$y, sbp$sigmak, method = &quot;HTS&quot;)
-
-Prediction Interval for Random-Effects Meta-Analysis
-
-Higgins-Thompson-Spiegelhalter prediction interval
- Heterogeneity variance: DerSimonian-Laird
- SE for average treatment effect: standard
-
-Average treatment effect [95%PI]:
- -0.3341 [-0.7598, 0.0917]
-
-Average treatment effect [95%CI]:
- -0.3341 [-0.5068, -0.1613]
-
-Heterogeneity variance (tau^2):
- 0.0282
-
-&gt; 
-&gt; # Partlett-Riley prediction interval (Hartung and Knapp's SE)
-&gt; pima(sbp$y, sbp$sigmak, method = &quot;HK&quot;)
-
-Prediction Interval for Random-Effects Meta-Analysis
-
-Partlett-Riley prediction interval
- Heterogeneity variance: REML
- SE for average treatment effect: Hartung-Knapp
-
-Average treatment effect [95%PI]:
- -0.3287 [-0.9887, 0.3312]
-
-Average treatment effect [95%CI]:
- -0.3287 [-0.5761, -0.0814]
-
-Heterogeneity variance (tau^2):
- 0.0700
-
-&gt; 
-&gt; # Partlett-Riley prediction interval (Sidik and Jonkman's SE)
-&gt; pima(sbp$y, sbp$sigmak, method = &quot;SJ&quot;)
-
-Prediction Interval for Random-Effects Meta-Analysis
-
-Partlett-Riley prediction interval
- Heterogeneity variance: REML
- SE for average treatment effect: Sidik-Jonkman
-
-Average treatment effect [95%PI]:
- -0.3287 [-0.9835, 0.3261]
-
-Average treatment effect [95%CI]:
- -0.3287 [-0.5625, -0.0950]
-
-Heterogeneity variance (tau^2):
- 0.0700</code></pre>
+<pre><code>## 
+## Prediction &amp; Confidence Intervals for Random-Effects Meta-Analysis
+## 
+## Partlett-Riley prediction and confidence intervals
+##  Heterogeneity variance: REML
+##  Variance for average treatment effect: bias corrected Sidik-Jonkman
+## 
+## No. of studies: 10
+## 
+## Average treatment effect [95% prediction interval]:
+##  -0.3287 [-0.9835, 0.3261]
+##  d.f.: 8
+## 
+## Average treatment effect [95% confidence interval]:
+##  -0.3287 [-0.5625, -0.0950]
+##  d.f.: 9
+## 
+## Heterogeneity measure
+##  tau-squared: 0.0700
+##  I-squared:  85.5%</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Partlett-Riley prediction interval (Kenward and Roger's variance)</span>
+<span class="kw">pima</span>(sbp<span class="op">$</span>y, sbp<span class="op">$</span>sigmak, <span class="dt">method =</span> <span class="st">&quot;KR&quot;</span>)</code></pre></div>
+<pre><code>## 
+## Prediction &amp; Confidence Intervals for Random-Effects Meta-Analysis
+## 
+## Partlett-Riley prediction and confidence intervals
+##  Heterogeneity variance: REML
+##  Variance for average treatment effect: Kenward-Roger
+## 
+## No. of studies: 10
+## 
+## Average treatment effect [95% prediction interval]:
+##  -0.3287 [-1.0280, 0.3706]
+##  d.f.: 5.9508
+## 
+## Average treatment effect [95% confidence interval]:
+##  -0.3287 [-0.5815, -0.0759]
+##  d.f.: 6.9508
+## 
+## Heterogeneity measure
+##  tau-squared: 0.0700
+##  I-squared:  85.5%</code></pre>
+<p>The <code>convert_bin()</code> function converts binary outcome data to effect size estimates and within studies standard errors vectors. A data set of 13 placebo-controlled trials with cisapride that was reported by Hartung and Knapp (Stat Med., 2001, <a href="https://doi.org/10.1002/sim.1009">doi:10.1002/sim.1009</a>) was analyzed below.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">m1 &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">15</span>,<span class="dv">12</span>,<span class="dv">29</span>,<span class="dv">42</span>,<span class="dv">14</span>,<span class="dv">44</span>,<span class="dv">14</span>,<span class="dv">29</span>,<span class="dv">10</span>,<span class="dv">17</span>,<span class="dv">38</span>,<span class="dv">19</span>,<span class="dv">21</span>)
+n1 &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">16</span>,<span class="dv">16</span>,<span class="dv">34</span>,<span class="dv">56</span>,<span class="dv">22</span>,<span class="dv">54</span>,<span class="dv">17</span>,<span class="dv">58</span>,<span class="dv">14</span>,<span class="dv">26</span>,<span class="dv">44</span>,<span class="dv">29</span>,<span class="dv">38</span>)
+m2 &lt;-<span class="st"> </span><span class="kw">c</span>( <span class="dv">9</span>, <span class="dv">1</span>,<span class="dv">18</span>,<span class="dv">31</span>, <span class="dv">6</span>,<span class="dv">17</span>, <span class="dv">7</span>,<span class="dv">23</span>, <span class="dv">3</span>, <span class="dv">6</span>,<span class="dv">12</span>,<span class="dv">22</span>,<span class="dv">19</span>)
+n2 &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">16</span>,<span class="dv">16</span>,<span class="dv">34</span>,<span class="dv">56</span>,<span class="dv">22</span>,<span class="dv">55</span>,<span class="dv">15</span>,<span class="dv">58</span>,<span class="dv">15</span>,<span class="dv">27</span>,<span class="dv">45</span>,<span class="dv">30</span>,<span class="dv">38</span>)
+dat &lt;-<span class="st"> </span><span class="kw">convert_bin</span>(m1, n1, m2, n2, <span class="dt">type =</span> <span class="st">&quot;logOR&quot;</span>)
+dat</code></pre></div>
+<pre><code>##             y        se
+## 1   2.0989861 0.9847737
+## 2   3.3570262 1.0165653
+## 3   1.5652318 0.5747840
+## 4   0.8640463 0.4042977
+## 5   1.4656407 0.6332968
+## 6   2.2325713 0.4481371
+## 7   1.5465488 0.7782417
+## 8   0.4125323 0.3721812
+## 9   2.1202635 0.8265438
+## 10  1.8071598 0.6022988
+## 11  2.7646729 0.5382109
+## 12 -0.3544099 0.5555283
+## 13  0.2058521 0.4541130</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pibin &lt;-<span class="st"> </span><span class="kw">pima</span>(dat<span class="op">$</span>y, dat<span class="op">$</span>se, <span class="dt">seed =</span> <span class="dv">2236067</span>, <span class="dt">parallel =</span> <span class="dv">4</span>)
+pibin</code></pre></div>
+<pre><code>## 
+## Prediction &amp; Confidence Intervals for Random-Effects Meta-Analysis
+## 
+## A parametric bootstrap prediction and confidence intervals
+##  Heterogeneity variance: DerSimonian-Laird
+##  Variance for average treatment effect: Hartung (Hartung-Knapp)
+## 
+## No. of studies: 13
+## 
+## Average treatment effect [95% prediction interval]:
+##  1.4209 [-0.6283, 3.5173]
+##  d.f.: 12
+## 
+## Average treatment effect [95% confidence interval]:
+##  1.4209 [0.7992, 2.0567]
+##  d.f.: 12
+## 
+## Heterogeneity measure
+##  tau-squared: 0.7176
+##  I-squared:  69.9%</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">binlabel &lt;-<span class="st"> </span><span class="kw">c</span>(
+   <span class="st">&quot;Creytens&quot;</span>, <span class="st">&quot;Milo&quot;</span>, <span class="st">&quot;Francois and De Nutte&quot;</span>, <span class="st">&quot;Deruyttere et al.&quot;</span>,
+   <span class="st">&quot;Hannon&quot;</span>, <span class="st">&quot;Roesch&quot;</span>, <span class="st">&quot;De Nutte et al.&quot;</span>, <span class="st">&quot;Hausken and Bestad&quot;</span>,
+   <span class="st">&quot;Chung&quot;</span>, <span class="st">&quot;Van Outryve et al.&quot;</span>, <span class="st">&quot;Al-Quorain et al.&quot;</span>, <span class="st">&quot;Kellow et al.&quot;</span>,
+   <span class="st">&quot;Yeoh et al.&quot;</span>)
+<span class="kw">plot</span>(pibin, <span class="dt">digits =</span> <span class="dv">2</span>, <span class="dt">base_size =</span> <span class="dv">10</span>, <span class="dt">studylabel =</span> binlabel)</code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
 
 
 

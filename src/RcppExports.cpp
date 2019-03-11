@@ -6,6 +6,24 @@
 
 using namespace Rcpp;
 
+// pwchisqCpp
+List pwchisqCpp(const double q, const Eigen::VectorXd& lambda, const Eigen::VectorXi& mult, const Eigen::VectorXd& delta, const int n, const double mode, const int maxit, const double eps);
+RcppExport SEXP _pimeta_pwchisqCpp(SEXP qSEXP, SEXP lambdaSEXP, SEXP multSEXP, SEXP deltaSEXP, SEXP nSEXP, SEXP modeSEXP, SEXP maxitSEXP, SEXP epsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const double >::type q(qSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type mult(multSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type delta(deltaSEXP);
+    Rcpp::traits::input_parameter< const int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< const double >::type mode(modeSEXP);
+    Rcpp::traits::input_parameter< const int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< const double >::type eps(epsSEXP);
+    rcpp_result_gen = Rcpp::wrap(pwchisqCpp(q, lambda, mult, delta, n, mode, maxit, eps));
+    return rcpp_result_gen;
+END_RCPP
+}
 // bootPICppWrap
 List bootPICppWrap(const Eigen::VectorXd& rnd, const Eigen::VectorXd& y, const Eigen::VectorXd& sigma, const double alpha);
 RcppExport SEXP _pimeta_bootPICppWrap(SEXP rndSEXP, SEXP ySEXP, SEXP sigmaSEXP, SEXP alphaSEXP) {
@@ -21,8 +39,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // rtau2CppWrap
-NumericVector rtau2CppWrap(const int n, const Eigen::VectorXd& y, const Eigen::VectorXd& sigma, const double mode, const int maxit1, const double eps, const double lower, const double upper, const int maxit2, const double tol);
-RcppExport SEXP _pimeta_rtau2CppWrap(SEXP nSEXP, SEXP ySEXP, SEXP sigmaSEXP, SEXP modeSEXP, SEXP maxit1SEXP, SEXP epsSEXP, SEXP lowerSEXP, SEXP upperSEXP, SEXP maxit2SEXP, SEXP tolSEXP) {
+NumericVector rtau2CppWrap(const int n, const Eigen::VectorXd& y, const Eigen::VectorXd& sigma, const double mode, const int maxit1, const double eps, const double lower, const double upper, const int maxit2, const double tol, const int nthread);
+RcppExport SEXP _pimeta_rtau2CppWrap(SEXP nSEXP, SEXP ySEXP, SEXP sigmaSEXP, SEXP modeSEXP, SEXP maxit1SEXP, SEXP epsSEXP, SEXP lowerSEXP, SEXP upperSEXP, SEXP maxit2SEXP, SEXP tolSEXP, SEXP nthreadSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -36,7 +54,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double >::type upper(upperSEXP);
     Rcpp::traits::input_parameter< const int >::type maxit2(maxit2SEXP);
     Rcpp::traits::input_parameter< const double >::type tol(tolSEXP);
-    rcpp_result_gen = Rcpp::wrap(rtau2CppWrap(n, y, sigma, mode, maxit1, eps, lower, upper, maxit2, tol));
+    Rcpp::traits::input_parameter< const int >::type nthread(nthreadSEXP);
+    rcpp_result_gen = Rcpp::wrap(rtau2CppWrap(n, y, sigma, mode, maxit1, eps, lower, upper, maxit2, tol, nthread));
     return rcpp_result_gen;
 END_RCPP
 }
